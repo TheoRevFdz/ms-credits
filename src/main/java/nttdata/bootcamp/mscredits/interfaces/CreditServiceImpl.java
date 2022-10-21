@@ -1,9 +1,13 @@
 package nttdata.bootcamp.mscredits.interfaces;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import nttdata.bootcamp.mscredits.infraestructure.ICreditReactiveRepository;
+import nttdata.bootcamp.mscredits.infraestructure.ICreditRepository;
 import nttdata.bootcamp.mscredits.model.Credit;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -13,6 +17,8 @@ public class CreditServiceImpl implements ICreditService {
 
     @Autowired
     private ICreditReactiveRepository reactiveRepo;
+    @Autowired
+    private ICreditRepository repository;
 
     @Override
     public Mono<Credit> createCredit(Mono<Credit> credit) {
@@ -32,8 +38,13 @@ public class CreditServiceImpl implements ICreditService {
     }
 
     @Override
-    public Flux<Credit> findCreditByNroDoc(String nroDoc) {
-        return reactiveRepo.findByNroDoc(nroDoc);
+    public List<Credit> findCreditByNroDoc(String nroDoc) {
+        return repository.findByNroDoc(nroDoc);
+    }
+
+    @Override
+    public Optional<Credit> findCreditById(String id) {
+        return repository.findById(id);
     }
 
 }
