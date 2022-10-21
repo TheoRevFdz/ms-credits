@@ -1,0 +1,27 @@
+version: '3.9'
+services: 
+  mongodb:
+    container_name: ms-credits
+    image: mongo
+    hostname: host-bank
+    restart: always
+    ports:
+      - "27021:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: hrevilla
+      MONGO_INITDB_ROOT_PASSWORD: 1234
+    volumes:
+      - data-mongodb:/var/lib/creditsdb
+      - logs-mongodb:/var/log/creditsdb/
+    networks:
+      - bank
+
+volumes:
+  data-mongodb:
+    name: creditsdb
+  logs-mongodb:
+    name: creditsdb
+
+networks:
+  bank:
+    name: bank
