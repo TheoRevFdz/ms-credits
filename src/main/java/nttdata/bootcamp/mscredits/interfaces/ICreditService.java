@@ -17,4 +17,6 @@ public interface ICreditService {
     public List<Credit> findCreditByNroDoc(String nroDoc);
 
     public Optional<Credit> findCreditById(String id);
+
+    public Optional<Credit> findCreditByNroCredit(String nroCredit);
 }

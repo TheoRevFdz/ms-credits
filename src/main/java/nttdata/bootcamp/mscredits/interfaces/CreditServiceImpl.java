@@ -47,4 +47,9 @@ public class CreditServiceImpl implements ICreditService {
         return repository.findById(id);
     }
 
+    @Override
+    public Optional<Credit> findCreditByNroCredit(String nroCredit) {
+        return repository.findByNroCredit(nroCredit);
+    }
+
 }

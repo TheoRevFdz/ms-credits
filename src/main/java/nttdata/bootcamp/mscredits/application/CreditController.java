@@ -1,9 +1,11 @@
 package nttdata.bootcamp.mscredits.application;
 
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
@@ -87,9 +90,22 @@ public class CreditController {
     private ResponseEntity<?> saveCredit(Credit credit, CustomerDTO customer) {
         credit.setDateReg(new Date());
         credit.setType(customer.getTypePerson());
+        String uid = String.format("%040d",
+                new BigInteger(UUID.randomUUID().toString().replace("-", ""), 16));
+        credit.setNroCredit(uid);
 
         final Mono<Credit> response = service.createCredit(Mono.just(credit));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PutMapping
+    public ResponseEntity<?> updateCredit(@RequestBody Credit credit) {
+        try {
+            final Mono<Credit> response = service.updateCredit(credit);
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 
     @GetMapping
@@ -103,6 +119,15 @@ public class CreditController {
         final Optional<Credit> resp = service.findCreditById(id);
         if (resp.isPresent()) {
             return ResponseEntity.ok().body(resp.get());
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @GetMapping("/byNroCredit/{nroCredit}")
+    public ResponseEntity<?> findByNroCredit(@PathVariable("nroCredit") String nroCredit) {
+        final Optional<Credit> resp = service.findCreditByNroCredit(nroCredit);
+        if (resp.isPresent()) {
+            return ResponseEntity.ok(resp.get());
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
