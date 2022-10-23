@@ -1,7 +1,7 @@
 version: '3.9'
 services: 
   mongodb:
-    container_name: ms-credits
+    container_name: db-credits
     image: mongo
     hostname: host-bank
     restart: always

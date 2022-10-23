@@ -15,18 +15,18 @@ import nttdata.bootcamp.mscredits.dto.CustomerDTO;
 public class CustomerServiceImpl implements ICustomerService {
     
     @Autowired
-    private RestTemplate customerRest;
+    private RestTemplate rest;
 
     @Override
     public Optional<CustomerDTO> findCustomerByNroDoc(String nroDoc) throws ParseException {
-        Map<String, String> pathVar = new HashMap<String, String>();
-        pathVar.put("nroDoc", nroDoc);
+        Map<String, String> param = new HashMap<String, String>();
+        param.put("nroDoc", nroDoc);
         String uri = "http://localhost:8090/api/customers/byNroDoc/{nroDoc}";
         // String uri = "http://localhost:8081/byNroDoc/{nroDoc}";
-        CustomerDTO dto = customerRest.getForObject(
+        CustomerDTO dto = rest.getForObject(
                 uri,
                 CustomerDTO.class,
-                pathVar);
+                param);
         return Optional.ofNullable(dto);
     }
 

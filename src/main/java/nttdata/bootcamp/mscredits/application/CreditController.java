@@ -19,9 +19,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
 
+import nttdata.bootcamp.mscredits.dto.BalanceStateDTO;
 import nttdata.bootcamp.mscredits.dto.CustomerDTO;
+import nttdata.bootcamp.mscredits.dto.TransactionListDTO;
 import nttdata.bootcamp.mscredits.enums.CustomerTypes;
+import nttdata.bootcamp.mscredits.enums.TypeTransaction;
 import nttdata.bootcamp.mscredits.interfaces.ICreditService;
+import nttdata.bootcamp.mscredits.interfaces.ICreditTransactionService;
 import nttdata.bootcamp.mscredits.interfaces.ICustomerService;
 import nttdata.bootcamp.mscredits.interfaces.ITypeCreditService;
 import nttdata.bootcamp.mscredits.model.Credit;
@@ -40,6 +44,9 @@ public class CreditController {
 
     @Autowired
     private ITypeCreditService typeService;
+
+    @Autowired
+    private ICreditTransactionService transactionService;
 
     @PostMapping
     public ResponseEntity<?> createCredit(@RequestBody Credit credit) {
@@ -60,7 +67,9 @@ public class CreditController {
                                         type.get().getAllowedAmount()));
                     }
 
-                    return saveCredit(credit, customer.get());
+                    Mono<Credit> creditMono = prepareCredit(credit, customer.get());
+                    final Mono<Credit> response = service.createCredit(creditMono);
+                    return ResponseEntity.status(HttpStatus.CREATED).body(response);
                 }
 
                 List<TypeCredit> types = typeService.findAll();
@@ -87,22 +96,38 @@ public class CreditController {
         }
     }
 
-    private ResponseEntity<?> saveCredit(Credit credit, CustomerDTO customer) {
-        credit.setDateReg(new Date());
+    private Mono<Credit> prepareCredit(Credit credit, CustomerDTO customer) {
+        if (credit.getDateReg() == null)
+            credit.setDateReg(new Date());
         credit.setType(customer.getTypePerson());
         String uid = String.format("%040d",
                 new BigInteger(UUID.randomUUID().toString().replace("-", ""), 16));
-        credit.setNroCredit(uid);
+        if (credit.getNroCredit() == null)
+            credit.setNroCredit(uid);
+        if (credit.getAmountUsed() == null)
+            credit.setAmountUsed(0.0);
 
-        final Mono<Credit> response = service.createCredit(Mono.just(credit));
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        Mono<Credit> creditMono = Mono.just(credit);
+        return creditMono;
     }
 
     @PutMapping
     public ResponseEntity<?> updateCredit(@RequestBody Credit credit) {
         try {
-            final Mono<Credit> response = service.updateCredit(credit);
-            return ResponseEntity.ok().body(response);
+            Optional<CustomerDTO> customer = customerService.findCustomerByNroDoc(credit.getNroDoc());
+            if (customer.isPresent()) {
+                final Optional<Credit> resp = service.findCreditById(credit.getId());
+                if (resp.isPresent()) {
+                    Mono<Credit> creditMono = prepareCredit(credit, customer.get());
+                    final Mono<Credit> response = service.updateCredit(creditMono.block());
+                    return ResponseEntity.ok().body(response);
+                }
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(String.format("No se encontró cuenta con Id: %s", credit.getId()));
+            }
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(String.format("No se encontró cliente con documento: %s", credit.getNroDoc()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
@@ -130,5 +155,47 @@ public class CreditController {
             return ResponseEntity.ok(resp.get());
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @GetMapping("/balance/{nroCredit}")
+    public ResponseEntity<?> getBalanceByNroCredit(@PathVariable String nroCredit) {
+        try {
+            Optional<Credit> optCredit = service.findCreditByNroCredit(nroCredit);
+
+            if (optCredit.isPresent()) {
+                TransactionListDTO payments = transactionService.findTransactionByNroCreditAndType(nroCredit,
+                        TypeTransaction.PAGO.toString());
+                TransactionListDTO consumes = transactionService.findTransactionByNroCreditAndType(nroCredit,
+                        TypeTransaction.CONSUMO.toString());
+                Credit credit = optCredit.get();
+
+                final Double totalPayments = payments.getTransactions().stream()
+                        .mapToDouble(p -> p.getTransactionAmount())
+                        .sum();
+                final Double totalConsumes = consumes.getTransactions().stream()
+                        .mapToDouble(c -> c.getTransactionAmount())
+                        .sum();
+
+                BalanceStateDTO balance = BalanceStateDTO.builder()
+                        .nroDoc(credit.getNroDoc())
+                        .nroCredit(credit.getNroCredit())
+                        .type(credit.getType())
+                        .creditLineAllowed(credit.getCreditLine())
+                        .amountUsed(credit.getAmountUsed())
+                        .creditLineTotal(credit.getCreditLine() + credit.getAmountUsed())
+                        .payments(payments.getTransactions())
+                        .consumes(consumes.getTransactions())
+                        .totalPayments(totalPayments)
+                        .totalConsumes(totalConsumes)
+                        .build();
+
+                return ResponseEntity.ok().body(balance);
+            }
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(String.format("No se encontró crédito con Nro: %s", nroCredit));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 }
