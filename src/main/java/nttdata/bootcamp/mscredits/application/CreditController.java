@@ -1,6 +1,7 @@
 package nttdata.bootcamp.mscredits.application;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -19,6 +20,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
+import lombok.extern.slf4j.Slf4j;
 import nttdata.bootcamp.mscredits.dto.BalanceStateDTO;
 import nttdata.bootcamp.mscredits.dto.CustomerDTO;
 import nttdata.bootcamp.mscredits.dto.TransactionListDTO;
@@ -33,6 +37,7 @@ import nttdata.bootcamp.mscredits.model.TypeCredit;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @RestController
 public class CreditController {
 
@@ -133,12 +138,19 @@ public class CreditController {
         }
     }
 
+    @CircuitBreaker(name = "credits", fallbackMethod = "altFindCredits")
     @GetMapping
     public ResponseEntity<?> findCredits() {
         final Flux<Credit> response = service.findAllCredits();
         return ResponseEntity.ok(response);
     }
 
+    public ResponseEntity<?> altFindCredits(Exception ex) {
+        log.info(ex.getMessage());
+        return ResponseEntity.badRequest().body(new ArrayList<>());
+    }
+
+    @TimeLimiter(name = "credits", fallbackMethod = "altFindById")
     @GetMapping("/{id}")
     public ResponseEntity<?> findById(@PathVariable String id) {
         final Optional<Credit> resp = service.findCreditById(id);
@@ -148,6 +160,12 @@ public class CreditController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
+    public ResponseEntity<?> altFindById(@PathVariable String id, Exception ex) {
+        log.info(ex.getMessage());
+        return ResponseEntity.badRequest().body(null);
+    }
+
+    @TimeLimiter(name = "credits", fallbackMethod = "altFindByNroCredit")
     @GetMapping("/byNroCredit/{nroCredit}")
     public ResponseEntity<?> findByNroCredit(@PathVariable("nroCredit") String nroCredit) {
         final Optional<Credit> resp = service.findCreditByNroCredit(nroCredit);
@@ -157,6 +175,13 @@ public class CreditController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
+    public ResponseEntity<?> altFindByNroCredit(@PathVariable("nroCredit") String nroCredit, Exception ex) {
+        log.info(ex.getMessage());
+        return ResponseEntity.badRequest().body(null);
+    }
+
+
+    @CircuitBreaker(name = "credits", fallbackMethod = "getBalanceByNroCreditAlt")
     @GetMapping("/balance/{nroCredit}")
     public ResponseEntity<?> getBalanceByNroCredit(@PathVariable String nroCredit) {
         try {
@@ -197,5 +222,10 @@ public class CreditController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
+    }
+
+    public ResponseEntity<?>getBalanceByNroCreditAlt(@PathVariable String nroCredit,Exception ex){
+        log.info(ex.getMessage());
+        return ResponseEntity.badRequest().body(null);
     }
 }
