@@ -22,4 +22,5 @@ public class CustomerDTO {
     private String typePerson;
     private String typeProduct;
     private Date regDate;
+    private String profile;
 }

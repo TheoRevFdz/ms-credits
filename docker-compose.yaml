@@ -11,16 +11,13 @@ services:
       MONGO_INITDB_ROOT_USERNAME: hrevilla
       MONGO_INITDB_ROOT_PASSWORD: 1234
     volumes:
-      - data-mongodb:/var/lib/creditsdb
-      - logs-mongodb:/var/log/creditsdb/
+      - data-credits:/data/db
     networks:
       - bank
 
 volumes:
-  data-mongodb:
-    name: creditsdb
-  logs-mongodb:
-    name: creditsdb
+  data-credits:
+    name: data-credits
 
 networks:
   bank:
