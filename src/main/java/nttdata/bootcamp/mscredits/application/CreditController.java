@@ -165,9 +165,9 @@ public class CreditController {
         return ResponseEntity.badRequest().body(null);
     }
 
-    @TimeLimiter(name = "credits", fallbackMethod = "altFindByNroCredit")
+    @CircuitBreaker(name = "credits", fallbackMethod = "altFindByNroCredit")
     @GetMapping("/byNroCredit/{nroCredit}")
-    public ResponseEntity<?> findByNroCredit(@PathVariable("nroCredit") String nroCredit) {
+    public ResponseEntity<Credit> findByNroCredit(@PathVariable("nroCredit") String nroCredit) {
         final Optional<Credit> resp = service.findCreditByNroCredit(nroCredit);
         if (resp.isPresent()) {
             return ResponseEntity.ok(resp.get());
@@ -179,7 +179,6 @@ public class CreditController {
         log.info(ex.getMessage());
         return ResponseEntity.badRequest().body(null);
     }
-
 
     @CircuitBreaker(name = "credits", fallbackMethod = "getBalanceByNroCreditAlt")
     @GetMapping("/balance/{nroCredit}")
@@ -224,8 +223,14 @@ public class CreditController {
         }
     }
 
-    public ResponseEntity<?>getBalanceByNroCreditAlt(@PathVariable String nroCredit,Exception ex){
+    public ResponseEntity<?> getBalanceByNroCreditAlt(@PathVariable String nroCredit, Exception ex) {
         log.info(ex.getMessage());
         return ResponseEntity.badRequest().body(null);
+    }
+
+    @GetMapping("/nroDoc/{nroDoc}")
+    public ResponseEntity<?> findByNroDoc(@PathVariable String nroDoc) {
+        final List<Credit> response = service.findCreditByNroDoc(nroDoc);
+        return ResponseEntity.ok(response);
     }
 }
