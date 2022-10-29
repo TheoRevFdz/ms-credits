@@ -20,4 +20,7 @@ public class CreditTransactionDTO {
     private String detail;
     private Double transactionAmount;
     private Date transactionDate;
+    // CANTIDAD DE CUOTAS MENSUALES
+    private Double feeMonths;
+    private String originAccount;
 }

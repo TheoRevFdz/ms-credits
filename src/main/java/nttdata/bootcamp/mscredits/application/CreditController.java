@@ -72,6 +72,12 @@ public class CreditController {
                                         type.get().getAllowedAmount()));
                     }
 
+                    Boolean hasFeeNoPayment = transactionService.validateFee(customer.get().getNroDoc());
+                    if (hasFeeNoPayment) {
+                        return ResponseEntity.badRequest().body(String.format(
+                                "El cliente cuenta con cuotas de pago vencidas, por ello no puede adquirir un nuevo crédito."));
+                    }
+
                     Mono<Credit> creditMono = prepareCredit(credit, customer.get());
                     final Mono<Credit> response = service.createCredit(creditMono);
                     return ResponseEntity.status(HttpStatus.CREATED).body(response);

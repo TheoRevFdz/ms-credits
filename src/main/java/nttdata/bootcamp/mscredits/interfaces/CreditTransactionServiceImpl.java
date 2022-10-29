@@ -39,4 +39,13 @@ public class CreditTransactionServiceImpl implements ICreditTransactionService {
         return dto;
     }
 
+    @Override
+    public Boolean validateFee(String nroDoc) {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("nroDoc", nroDoc);
+        String uri = "http://localhost:8090/api/credits_transactions/validateFee/{nroDoc}";
+        Boolean resp = rest.getForObject(uri, Boolean.class, params);
+        return resp;
+    }
+
 }
