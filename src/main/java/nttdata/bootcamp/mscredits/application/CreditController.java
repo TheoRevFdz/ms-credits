@@ -28,11 +28,13 @@ import nttdata.bootcamp.mscredits.dto.CustomerDTO;
 import nttdata.bootcamp.mscredits.dto.TransactionListDTO;
 import nttdata.bootcamp.mscredits.enums.CustomerTypes;
 import nttdata.bootcamp.mscredits.enums.TypeTransaction;
+import nttdata.bootcamp.mscredits.interfaces.ICreditCardService;
 import nttdata.bootcamp.mscredits.interfaces.ICreditService;
 import nttdata.bootcamp.mscredits.interfaces.ICreditTransactionService;
 import nttdata.bootcamp.mscredits.interfaces.ICustomerService;
 import nttdata.bootcamp.mscredits.interfaces.ITypeCreditService;
 import nttdata.bootcamp.mscredits.model.Credit;
+import nttdata.bootcamp.mscredits.model.CreditCard;
 import nttdata.bootcamp.mscredits.model.TypeCredit;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -52,6 +54,9 @@ public class CreditController {
 
     @Autowired
     private ICreditTransactionService transactionService;
+
+    @Autowired
+    private ICreditCardService cardService;
 
     @PostMapping
     public ResponseEntity<?> createCredit(@RequestBody Credit credit) {
@@ -235,8 +240,28 @@ public class CreditController {
     }
 
     @GetMapping("/nroDoc/{nroDoc}")
-    public ResponseEntity<?> findByNroDoc(@PathVariable String nroDoc) {
-        final List<Credit> response = service.findCreditByNroDoc(nroDoc);
-        return ResponseEntity.ok(response);
+    public Mono<ResponseEntity<Flux<Credit>>> findByNroDoc(@PathVariable String nroDoc) {
+        List<Credit> response = service.findCreditByNroDoc(nroDoc);
+        List<Credit> result = response.stream().map(c -> {
+            CreditCard creditCard = cardService.findCardByNroCredit(c.getNroCredit());
+            c.setCreditCard(creditCard);
+            return c;
+        }).collect(Collectors.toList());
+
+        Flux<Credit> respFlux = Flux.fromIterable(result);
+        // respFlux.map(c -> {
+        // Mono<CreditCard> creditCard =
+        // cardService.findCardByNroCredit(c.getNroCredit());
+        // creditCard.map(cc -> {
+        // c.setCreditCard(cc);
+        // return cc;
+        // }).subscribe(cc -> {
+        // c.setCreditCard(cc);
+        // log.info("CreditCard: " + cc.toString());
+        // });
+        // return c;
+        // }).subscribe(c -> log.info("Credit: " + c.toString()));
+
+        return Mono.just(ResponseEntity.ok().body(respFlux));
     }
 }

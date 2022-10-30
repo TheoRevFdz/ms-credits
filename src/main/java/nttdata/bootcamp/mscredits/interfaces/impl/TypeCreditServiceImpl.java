@@ -1,4 +1,4 @@
-package nttdata.bootcamp.mscredits.interfaces;
+package nttdata.bootcamp.mscredits.interfaces.impl;
 
 import java.util.List;
 import java.util.Optional;
@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import nttdata.bootcamp.mscredits.infraestructure.ITypeCreditRepository;
+import nttdata.bootcamp.mscredits.interfaces.ITypeCreditService;
 import nttdata.bootcamp.mscredits.model.TypeCredit;
 
 @Service

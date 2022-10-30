@@ -1,4 +1,4 @@
-package nttdata.bootcamp.mscredits.interfaces;
+package nttdata.bootcamp.mscredits.interfaces.impl;
 
 import java.util.List;
 import java.util.Optional;
@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import nttdata.bootcamp.mscredits.infraestructure.ICreditReactiveRepository;
 import nttdata.bootcamp.mscredits.infraestructure.ICreditRepository;
+import nttdata.bootcamp.mscredits.interfaces.ICreditService;
 import nttdata.bootcamp.mscredits.model.Credit;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

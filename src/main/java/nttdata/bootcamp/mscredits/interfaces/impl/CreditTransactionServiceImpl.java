@@ -1,4 +1,4 @@
-package nttdata.bootcamp.mscredits.interfaces;
+package nttdata.bootcamp.mscredits.interfaces.impl;
 
 import java.util.HashMap;
 import java.util.List;
@@ -9,16 +9,16 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
+import nttdata.bootcamp.mscredits.config.RestConfig;
 import nttdata.bootcamp.mscredits.dto.CreditTransactionDTO;
 import nttdata.bootcamp.mscredits.dto.TransactionListDTO;
+import nttdata.bootcamp.mscredits.interfaces.ICreditTransactionService;
 
 @Service
 public class CreditTransactionServiceImpl implements ICreditTransactionService {
 
     @Autowired
-    private RestTemplate rest;
+    private RestConfig rest;
 
     @Override
     public TransactionListDTO findTransactionByNroCreditAndType(String nroCredit, String type) {

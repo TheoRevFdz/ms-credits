@@ -1,4 +1,4 @@
-package nttdata.bootcamp.mscredits.interfaces;
+package nttdata.bootcamp.mscredits.interfaces.impl;
 
 import java.text.ParseException;
 import java.util.HashMap;
@@ -7,15 +7,15 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
+import nttdata.bootcamp.mscredits.config.RestConfig;
 import nttdata.bootcamp.mscredits.dto.CustomerDTO;
+import nttdata.bootcamp.mscredits.interfaces.ICustomerService;
 
 @Service
 public class CustomerServiceImpl implements ICustomerService {
     
     @Autowired
-    private RestTemplate rest;
+    private RestConfig rest;
 
     @Override
     public Optional<CustomerDTO> findCustomerByNroDoc(String nroDoc) throws ParseException {
