@@ -1,5 +1,7 @@
 package nttdata.bootcamp.mscredits.interfaces.impl;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +34,11 @@ public class CreditCardServiceImpl implements ICreditCardService {
     @Override
     public CreditCard findCardByNroCredit(String nroCredit) {
         return repository.findByNroCredit(nroCredit);
+    }
+
+    @Override
+    public Optional<CreditCard> findByNroCardAndNroCredit(String nroCard, String nroCredit) {
+        return repository.findByNroCardAndNroCredit(nroCard, nroCredit);
     }
 
 }

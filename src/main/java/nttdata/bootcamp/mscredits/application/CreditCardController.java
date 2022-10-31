@@ -64,4 +64,14 @@ public class CreditCardController {
         Mono<CreditCard> resp = service.cancelCard(card);
         return ResponseEntity.ok().body(resp);
     }
+
+    @GetMapping("/creditCard/{nroCard}/{nroCredit}")
+    public ResponseEntity<?> findByNroCardAndNroCredit(@PathVariable String nroCard, @PathVariable String nroCredit) {
+        Optional<CreditCard> optCreditCard = service.findByNroCardAndNroCredit(nroCard, nroCredit);
+        if (optCreditCard.isPresent()) {
+            return ResponseEntity.ok().body(optCreditCard.get());
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(null);
+    }
 }

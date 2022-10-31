@@ -23,4 +23,6 @@ public class CreditTransactionDTO {
     // CANTIDAD DE CUOTAS MENSUALES
     private Double feeMonths;
     private String originAccount;
+    private String method;
+    private String nroCard;
 }
