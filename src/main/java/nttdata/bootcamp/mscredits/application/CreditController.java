@@ -28,11 +28,13 @@ import nttdata.bootcamp.mscredits.dto.CustomerDTO;
 import nttdata.bootcamp.mscredits.dto.TransactionListDTO;
 import nttdata.bootcamp.mscredits.enums.CustomerTypes;
 import nttdata.bootcamp.mscredits.enums.TypeTransaction;
+import nttdata.bootcamp.mscredits.interfaces.ICreditCardService;
 import nttdata.bootcamp.mscredits.interfaces.ICreditService;
 import nttdata.bootcamp.mscredits.interfaces.ICreditTransactionService;
 import nttdata.bootcamp.mscredits.interfaces.ICustomerService;
 import nttdata.bootcamp.mscredits.interfaces.ITypeCreditService;
 import nttdata.bootcamp.mscredits.model.Credit;
+import nttdata.bootcamp.mscredits.model.CreditCard;
 import nttdata.bootcamp.mscredits.model.TypeCredit;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -53,6 +55,9 @@ public class CreditController {
     @Autowired
     private ICreditTransactionService transactionService;
 
+    @Autowired
+    private ICreditCardService cardService;
+
     @PostMapping
     public ResponseEntity<?> createCredit(@RequestBody Credit credit) {
         try {
@@ -70,6 +75,12 @@ public class CreditController {
                                 String.format(
                                         "El cliente ya cuenta con crédito registrado y por ser de tipo PERSONAL solo puede tener un máximo de %x crédito",
                                         type.get().getAllowedAmount()));
+                    }
+
+                    Boolean hasFeeNoPayment = transactionService.validateFee(customer.get().getNroDoc());
+                    if (hasFeeNoPayment) {
+                        return ResponseEntity.badRequest().body(String.format(
+                                "El cliente cuenta con cuotas de pago vencidas, por ello no puede adquirir un nuevo crédito."));
                     }
 
                     Mono<Credit> creditMono = prepareCredit(credit, customer.get());
@@ -165,9 +176,9 @@ public class CreditController {
         return ResponseEntity.badRequest().body(null);
     }
 
-    @TimeLimiter(name = "credits", fallbackMethod = "altFindByNroCredit")
+    @CircuitBreaker(name = "credits", fallbackMethod = "altFindByNroCredit")
     @GetMapping("/byNroCredit/{nroCredit}")
-    public ResponseEntity<?> findByNroCredit(@PathVariable("nroCredit") String nroCredit) {
+    public ResponseEntity<Credit> findByNroCredit(@PathVariable("nroCredit") String nroCredit) {
         final Optional<Credit> resp = service.findCreditByNroCredit(nroCredit);
         if (resp.isPresent()) {
             return ResponseEntity.ok(resp.get());
@@ -179,7 +190,6 @@ public class CreditController {
         log.info(ex.getMessage());
         return ResponseEntity.badRequest().body(null);
     }
-
 
     @CircuitBreaker(name = "credits", fallbackMethod = "getBalanceByNroCreditAlt")
     @GetMapping("/balance/{nroCredit}")
@@ -224,8 +234,34 @@ public class CreditController {
         }
     }
 
-    public ResponseEntity<?>getBalanceByNroCreditAlt(@PathVariable String nroCredit,Exception ex){
+    public ResponseEntity<?> getBalanceByNroCreditAlt(@PathVariable String nroCredit, Exception ex) {
         log.info(ex.getMessage());
         return ResponseEntity.badRequest().body(null);
+    }
+
+    @GetMapping("/nroDoc/{nroDoc}")
+    public Mono<ResponseEntity<Flux<Credit>>> findByNroDoc(@PathVariable String nroDoc) {
+        List<Credit> response = service.findCreditByNroDoc(nroDoc);
+        List<Credit> result = response.stream().map(c -> {
+            CreditCard creditCard = cardService.findCardByNroCredit(c.getNroCredit());
+            c.setCreditCard(creditCard);
+            return c;
+        }).collect(Collectors.toList());
+
+        Flux<Credit> respFlux = Flux.fromIterable(result);
+        // respFlux.map(c -> {
+        // Mono<CreditCard> creditCard =
+        // cardService.findCardByNroCredit(c.getNroCredit());
+        // creditCard.map(cc -> {
+        // c.setCreditCard(cc);
+        // return cc;
+        // }).subscribe(cc -> {
+        // c.setCreditCard(cc);
+        // log.info("CreditCard: " + cc.toString());
+        // });
+        // return c;
+        // }).subscribe(c -> log.info("Credit: " + c.toString()));
+
+        return Mono.just(ResponseEntity.ok().body(respFlux));
     }
 }
